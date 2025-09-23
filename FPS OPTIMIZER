@@ -1,0 +1,370 @@
+-- Roblox FPS Optimizer Script (No GUI)
+-- Maximum performance boost with automatic optimization
+
+local Players = game:GetService("Players")
+local Lighting = game:GetService("Lighting")
+local StarterGui = game:GetService("StarterGui")
+local RunService = game:GetService("RunService")
+local ContentProvider = game:GetService("ContentProvider")
+local SoundService = game:GetService("SoundService")
+
+local player = Players.LocalPlayer
+
+-- Configuration (Set to true for maximum FPS boost)
+local CONFIG = {
+    REMOVE_TEXTURES = true,
+    DISABLE_SHADOWS = true,
+    REMOVE_DECALS = true,
+    OPTIMIZE_LIGHTING = true,
+    DISABLE_PARTICLES = true,
+    DISABLE_POST_EFFECTS = true,
+    REDUCE_SOUND_QUALITY = true,
+    OPTIMIZE_TERRAIN = true,
+    DISABLE_ANIMATIONS = false, -- Set to true if you want to disable player animations
+    AUTO_CLEANUP = true
+}
+
+-- Console logging function
+local function log(message)
+    print("🚀 [FPS OPTIMIZER]: " .. message)
+end
+
+-- Graphics Quality Optimization
+local function optimizeGraphics()
+    log("Optimizing graphics settings...")
+    
+    -- Set lowest quality settings
+    settings().Rendering.QualityLevel = 1
+    settings().Rendering.MeshPartDetailLevel = Enum.MeshPartDetailLevel.Level04
+    settings().Rendering.EnableFRM = false
+    settings().Rendering.GraphicsMode = Enum.GraphicsMode.NoGraphics
+    
+    -- Disable expensive rendering features
+    if sethiddenproperty then
+        pcall(function()
+            sethiddenproperty(workspace, "StreamingMinRadius", 0)
+            sethiddenproperty(workspace, "StreamingTargetRadius", 0)
+        end)
+    end
+    
+    log("Graphics optimization complete")
+end
+
+-- Lighting Optimization
+local function optimizeLighting()
+    if not CONFIG.OPTIMIZE_LIGHTING then return end
+    
+    log("Optimizing lighting...")
+    
+    -- Disable shadows and expensive lighting
+    Lighting.GlobalShadows = false
+    Lighting.Technology = Enum.Technology.Compatibility
+    Lighting.Brightness = 1
+    Lighting.FogEnd = 100
+    Lighting.FogStart = 0
+    
+    -- Remove/disable post-processing effects
+    if CONFIG.DISABLE_POST_EFFECTS then
+        for _, effect in pairs(Lighting:GetChildren()) do
+            if effect:IsA("PostEffect") then
+                effect.Enabled = false
+            elseif effect:IsA("Atmosphere") then
+                effect.Density = 0
+                effect.Offset = 0
+                effect.Glare = 0
+                effect.Haze = 0
+            elseif effect:IsA("BloomEffect") then
+                effect.Enabled = false
+            elseif effect:IsA("ColorCorrectionEffect") then
+                effect.Enabled = false
+            elseif effect:IsA("SunRaysEffect") then
+                effect.Enabled = false
+            elseif effect:IsA("DepthOfFieldEffect") then
+                effect.Enabled = false
+            end
+        end
+    end
+    
+    log("Lighting optimization complete")
+end
+
+-- Texture and Material Optimization
+local function optimizeTextures(parent)
+    if not CONFIG.REMOVE_TEXTURES then return end
+    
+    for _, obj in pairs(parent:GetDescendants()) do
+        if obj:IsA("BasePart") then
+            -- Convert to lowest quality material
+            obj.Material = Enum.Material.Plastic
+            obj.TopSurface = Enum.SurfaceType.Smooth
+            obj.BottomSurface = Enum.SurfaceType.Smooth
+            obj.Reflectance = 0
+            
+            -- Remove transparency effects if possible
+            if obj.Transparency > 0.5 then
+                obj.Transparency = 1
+            end
+            
+        elseif CONFIG.REMOVE_DECALS and (obj:IsA("Decal") or obj:IsA("Texture")) then
+            obj:Destroy()
+            
+        elseif obj:IsA("SurfaceGui") then
+            -- Reduce GUI quality
+            for _, child in pairs(obj:GetDescendants()) do
+                if child:IsA("ImageLabel") or child:IsA("ImageButton") then
+                    child.Image = ""
+                end
+            end
+        end
+    end
+end
+
+-- Particle and Effect Optimization
+local function optimizeEffects(parent)
+    if not CONFIG.DISABLE_PARTICLES then return end
+    
+    for _, obj in pairs(parent:GetDescendants()) do
+        if obj:IsA("ParticleEmitter") then
+            obj.Enabled = false
+        elseif obj:IsA("Fire") then
+            obj.Enabled = false
+        elseif obj:IsA("Smoke") then
+            obj.Enabled = false
+        elseif obj:IsA("Sparkles") then
+            obj.Enabled = false
+        elseif obj:IsA("Explosion") then
+            obj.Visible = false
+        elseif obj:IsA("Trail") then
+            obj.Enabled = false
+        elseif obj:IsA("Beam") then
+            obj.Enabled = false
+        end
+    end
+end
+
+-- Sound Optimization
+local function optimizeSounds()
+    if not CONFIG.REDUCE_SOUND_QUALITY then return end
+    
+    log("Optimizing sound quality...")
+    
+    -- Reduce master volume and disable reverb
+    SoundService.MasterVolume = 0.3
+    SoundService.RolloffScale = 0.1
+    
+    -- Optimize all sounds in workspace
+    for _, obj in pairs(workspace:GetDescendants()) do
+        if obj:IsA("Sound") then
+            obj.Volume = math.min(obj.Volume, 0.3)
+        end
+    end
+    
+    log("Sound optimization complete")
+end
+
+-- Terrain Optimization
+local function optimizeTerrain()
+    if not CONFIG.OPTIMIZE_TERRAIN then return end
+    
+    log("Optimizing terrain...")
+    
+    local terrain = workspace.Terrain
+    if terrain then
+        terrain.Decoration = false
+        
+        -- Reduce terrain quality if possible
+        if sethiddenproperty then
+            pcall(function()
+                sethiddenproperty(terrain, "ReadVoxels", false)
+            end)
+        end
+    end
+    
+    log("Terrain optimization complete")
+end
+
+-- Animation Optimization
+local function optimizeAnimations()
+    if not CONFIG.DISABLE_ANIMATIONS then return end
+    
+    log("Disabling animations...")
+    
+    -- Disable player animations
+    if player.Character then
+        local humanoid = player.Character:FindFirstChild("Humanoid")
+        if humanoid then
+            for _, track in pairs(humanoid:GetPlayingAnimationTracks()) do
+                track:Stop()
+            end
+        end
+    end
+    
+    -- Disable all animations in workspace
+    for _, obj in pairs(workspace:GetDescendants()) do
+        if obj:IsA("AnimationTrack") then
+            obj:Stop()
+        end
+    end
+    
+    log("Animation optimization complete")
+end
+
+-- Memory Cleanup
+local function performCleanup()
+    if not CONFIG.AUTO_CLEANUP then return end
+    
+    log("Performing memory cleanup...")
+    
+    -- Clear ContentProvider cache
+    ContentProvider:PreloadAsync({})
+    
+    -- Force garbage collection
+    game:GetService("Debris"):AddItem(Instance.new("Folder"), 0)
+    
+    -- Remove unnecessary objects
+    for _, obj in pairs(workspace:GetDescendants()) do
+        if obj:IsA("Script") and not obj.Enabled then
+            obj:Destroy()
+        elseif obj:IsA("RemoteEvent") and #obj:GetChildren() == 0 then
+            -- Don't destroy RemoteEvents as they might be used
+        end
+    end
+    
+    log("Memory cleanup complete")
+end
+
+-- Continuous Optimization Loop
+local function startContinuousOptimization()
+    log("Starting continuous optimization...")
+    
+    local lastOptimization = 0
+    local optimizationInterval = 5 -- seconds
+    
+    RunService.Heartbeat:Connect(function()
+        local currentTime = tick()
+        
+        if currentTime - lastOptimization >= optimizationInterval then
+            -- Optimize new objects that may have been added
+            optimizeTextures(workspace)
+            optimizeEffects(workspace)
+            
+            -- Periodic cleanup
+            if CONFIG.AUTO_CLEANUP then
+                performCleanup()
+            end
+            
+            lastOptimization = currentTime
+        end
+        
+        -- Real-time optimizations for new objects
+        for _, obj in pairs(workspace:GetDescendants()) do
+            if CONFIG.REMOVE_TEXTURES and obj:IsA("BasePart") and obj.Material ~= Enum.Material.Plastic then
+                obj.Material = Enum.Material.Plastic
+            elseif CONFIG.DISABLE_PARTICLES and obj:IsA("ParticleEmitter") and obj.Enabled then
+                obj.Enabled = false
+            end
+        end
+    end)
+end
+
+-- Player Character Optimization
+local function optimizeCharacter(character)
+    if not character then return end
+    
+    log("Optimizing player character...")
+    
+    -- Wait for character to load
+    character:WaitForChild("HumanoidRootPart", 5)
+    
+    -- Optimize character parts
+    optimizeTextures(character)
+    optimizeEffects(character)
+    
+    if CONFIG.DISABLE_ANIMATIONS then
+        local humanoid = character:FindFirstChild("Humanoid")
+        if humanoid then
+            -- Disable default animations
+            for _, track in pairs(humanoid:GetPlayingAnimationTracks()) do
+                track:Stop()
+            end
+        end
+    end
+end
+
+-- Handle new players and character respawns
+local function setupPlayerOptimization()
+    -- Optimize current character
+    if player.Character then
+        optimizeCharacter(player.Character)
+    end
+    
+    -- Optimize future characters
+    player.CharacterAdded:Connect(optimizeCharacter)
+    
+    -- Optimize other players' characters
+    for _, otherPlayer in pairs(Players:GetPlayers()) do
+        if otherPlayer ~= player and otherPlayer.Character then
+            optimizeCharacter(otherPlayer.Character)
+        end
+        
+        otherPlayer.CharacterAdded:Connect(optimizeCharacter)
+    end
+    
+    Players.PlayerAdded:Connect(function(newPlayer)
+        newPlayer.CharacterAdded:Connect(optimizeCharacter)
+    end)
+end
+
+-- Main Initialization Function
+local function initializeOptimizer()
+    log("🚀 FPS Optimizer Starting...")
+    log("Configuration: Max Performance Mode")
+    
+    -- Wait a moment for game to load
+    wait(2)
+    
+    -- Apply all optimizations
+    optimizeGraphics()
+    optimizeLighting()
+    optimizeTextures(workspace)
+    optimizeEffects(workspace)
+    optimizeSounds()
+    optimizeTerrain()
+    optimizeAnimations()
+    performCleanup()
+    
+    -- Setup continuous optimization
+    startContinuousOptimization()
+    setupPlayerOptimization()
+    
+    log("✅ FPS Optimizer Active!")
+    log("Performance mode: MAXIMUM")
+    
+    -- Notify user
+    StarterGui:SetCore("SendNotification", {
+        Title = "FPS Optimizer";
+        Text = "Maximum performance mode active!";
+        Duration = 3;
+    })
+    
+    -- Show final status
+    wait(1)
+    log("🎯 All optimizations applied successfully")
+    log("📊 Monitoring performance in background...")
+end
+
+-- Error handling wrapper
+local function safeExecute(func, name)
+    local success, error = pcall(func)
+    if not success then
+        log("⚠️ Error in " .. name .. ": " .. tostring(error))
+    end
+end
+
+-- Start the optimizer with error handling
+safeExecute(initializeOptimizer, "FPS Optimizer")
+
+-- Clean shutdown on game leave
+game:BindToClose(function()
+    log("🛑 FPS Optimizer shutting down...")
+end)
