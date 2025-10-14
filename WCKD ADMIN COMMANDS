@@ -1,7 +1,6 @@
--- WICKED ON TOP BITCH
-https://discord.gg/Tyw9NEv6
+-- Discord server for working games: https://discord.gg/wickedcmd
 
--- Made By: WICKED
+-- Made by Cynatica
 
 -- WickedCMD on Top!
 
@@ -670,7 +669,7 @@ local function createNotification()
 
 
 	local label = Instance.new("TextLabel")
-	label.Text = "WICKED ON TOP!!!"
+	label.Text = "Join our Discord Server!"
 	label.TextColor3 = Color3.fromRGB(159, 159, 159)
 	label.Font = Enum.Font.GothamBold
 	label.TextSize = 14
@@ -792,30 +791,9 @@ task.delay(2,function()
 	if character then return end
 	cmdTemplate.Text = "waiting for LocalPlayer.Character..."
 end)
-character = localPlayer.Character or localPlayer.CharacterAdded:Wait()
--- Safer test instance selection: try StarterGear -> Backpack -> StarterPack -> any tool in character
-local testInstance = nil
-local sg = localPlayer:FindFirstChild("StarterGear")
-if sg and #sg:GetChildren() > 0 then testInstance = sg:GetChildren()[1] end
-if not testInstance then
-    local bp = localPlayer:FindFirstChildOfClass("Backpack")
-    if bp and #bp:GetChildren() > 0 then testInstance = bp:GetChildren()[1] end
-end
-if not testInstance then
-    local sp = game:FindFirstChild("StarterPack")
-    if sp and #sp:GetChildren() > 0 then testInstance = sp:GetChildren()[1] end
-end
-if not testInstance and character then
-    for _,v in pairs(character:GetChildren()) do
-        if v:IsA("Tool") then testInstance = v break end
-    end
-end
-if not testInstance then
-    -- No tool was found; we will proceed without a testInstance. Some remote checks will call remote without args.
-    cmdTemplate.Text = "No test tool found; proceeding in reduced-compatibility mode."
-else
-    cmdTemplate.Text = "Test tool found: " .. tostring(testInstance.Name)
-end
+character = localPlayer.Character or localPlayer.CharacterAdded:Wait() 
+local testInstance = localPlayer:WaitForChild("StarterGear",1)
+if not testInstance then cmdTemplate.Text = "StarterGear already missing." return error("no test instance found") end
 
 local visible = false
 genv.connections = {}
@@ -1308,15 +1286,10 @@ if not genv.foundRemote then
 		debugPrint(remote.Name)
 		remotePath.Text = remote:GetFullName()
 		local currentChar = character
-		if testInstance then
-			if remote.Name == "DestroySegway" then
-				remote:FireServer(testInstance, {Value = testInstance})
-			else
-				remote:FireServer(testInstance)
-			end
+		if remote.Name == "DestroySegway" then
+			remote:FireServer(testInstance, {Value = testInstance})
 		else
-			-- No testInstance available: try firing with no args (some games accept this)
-			pcall(function() remote:FireServer() end)
+			remote:FireServer(testInstance)
 		end
 		task.wait(checkTime + mobileOffset + (localPlayer:GetNetworkPing()*2))
 		if localPlayer:FindFirstChild("StarterGear") then return end
